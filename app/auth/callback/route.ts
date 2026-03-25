@@ -1,18 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-
-function getOrigin(request: NextRequest): string {
-  const url = new URL(request.url);
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const host = forwardedHost ?? url.host;
-  const proto =
-    forwardedProto || url.protocol.replace(":", "") || "http";
-  return `${proto}://${host}`;
-}
+import { getRequestOrigin } from "@/lib/auth/request-origin";
 
 export async function GET(request: NextRequest) {
-  const origin = getOrigin(request);
+  const origin = getRequestOrigin(request);
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const oauthError = searchParams.get("error");

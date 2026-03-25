@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 function decodedDetail(detail: string | null): string {
@@ -55,23 +54,11 @@ function LoginOAuthErrors() {
 export function LoginForm() {
   const [loading, setLoading] = useState(false);
 
-  async function signInWithGoogle() {
+  function signInWithGoogle() {
     setLoading(true);
-    const supabase = createClient();
-    // OAuth must return to the same origin the user is on. NEXT_PUBLIC_SITE_URL is
-    // baked in at build time; if it points at localhost in Vercel, prod sign-in would
-    // still redirect to localhost. Prefer the live browser origin for redirectTo.
-    const base = window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${base}/auth/callback`,
-      },
-    });
-    if (error) {
-      setLoading(false);
-      console.error(error);
-    }
+    // OAuth starts on the server (`/auth/google`) so `redirect_to` uses the real
+    // request host (Vercel forwarded headers), not Supabase Site URL / localhost.
+    window.location.assign("/auth/google");
   }
 
   return (

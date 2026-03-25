@@ -24,7 +24,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!supabaseUrl || !supabaseKey || !isSupabaseConfigured()) {
-    if (pathname.startsWith("/login") || pathname.startsWith("/auth/callback")) {
+    if (
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/auth/callback") ||
+      pathname.startsWith("/auth/google")
+    ) {
       return nextWithRequest(request);
     }
     if (pathname.startsWith("/api/")) {
@@ -71,8 +75,9 @@ export async function middleware(request: NextRequest) {
 
   const isLogin = pathname.startsWith("/login");
   const isAuthCallback = pathname.startsWith("/auth/callback");
+  const isAuthGoogle = pathname.startsWith("/auth/google");
 
-  if (!user && !isLogin && !isAuthCallback) {
+  if (!user && !isLogin && !isAuthCallback && !isAuthGoogle) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
