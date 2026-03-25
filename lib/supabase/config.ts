@@ -1,3 +1,14 @@
+/** Supabase Auth OAuth URLs must use the project ref host (*.supabase.co), never the app (Vercel) URL. */
+export function isSupabaseCloudProjectUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url.trim()).hostname;
+    return host.endsWith(".supabase.co");
+  } catch {
+    return false;
+  }
+}
+
 /**
  * True when env looks like real Supabase keys (not template placeholders).
  * Prevents uncaught fetch/parse errors that surface as Internal Server Error.

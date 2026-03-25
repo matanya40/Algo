@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { isSupabaseCloudProjectUrl } from "@/lib/supabase/config";
 
 function first(v: string | string[] | undefined): string | undefined {
   if (v === undefined) return undefined;
@@ -16,6 +18,22 @@ const OAUTH_RESUME_KEYS = [
   "state",
 ] as const;
 
+function normalizeRedirectTo(raw: string, appOrigin: string): string {
+  try {
+    const u = new URL(raw);
+    const app = new URL(appOrigin);
+    if (
+      u.hostname === app.hostname &&
+      u.pathname.replace(/\/$/, "") === "/auth/v1/callback"
+    ) {
+      return `${appOrigin}/auth/callback`;
+    }
+  } catch {
+    /* keep raw */
+  }
+  return raw;
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -27,18 +45,34 @@ export default async function LoginPage({
 
   if (codeChallenge && provider) {
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-    if (base) {
-      const qs = new URLSearchParams();
-      for (const [key, raw] of Object.entries(sp)) {
-        const val = first(raw);
-        if (!val) continue;
-        const allow =
-          (OAUTH_RESUME_KEYS as readonly string[]).includes(key) ||
-          key.startsWith("code_");
-        if (allow) qs.set(key, val);
-      }
-      redirect(`${base}/auth/v1/authorize?${qs.toString()}`);
+
+    if (!base || !isSupabaseCloudProjectUrl(base)) {
+      const detail = encodeURIComponent(
+        "NEXT_PUBLIC_SUPABASE_URL must be https://YOUR_PROJECT.supabase.co (Supabase Dashboard → Settings → API), not your Vercel site URL."
+      );
+      redirect(`/login?error=config&detail=${detail}`);
     }
+
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    const appOrigin = host ? `${proto}://${host}` : null;
+
+    const qs = new URLSearchParams();
+    for (const [key, raw] of Object.entries(sp)) {
+      const val = first(raw);
+      if (!val) continue;
+      const allow =
+        (OAUTH_RESUME_KEYS as readonly string[]).includes(key) ||
+        key.startsWith("code_");
+      if (!allow) continue;
+      if (key === "redirect_to" && appOrigin) {
+        qs.set("redirect_to", normalizeRedirectTo(val, appOrigin));
+        continue;
+      }
+      qs.set(key, val);
+    }
+    redirect(`${base}/auth/v1/authorize?${qs.toString()}`);
   }
 
   return (

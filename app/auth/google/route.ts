@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { getRequestOrigin } from "@/lib/auth/request-origin";
+import { isSupabaseCloudProjectUrl } from "@/lib/supabase/config";
 
 /**
  * Server-side OAuth start so `redirect_to` uses the real request host (Vercel /
@@ -15,6 +16,13 @@ export async function GET(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(`${origin}/login?error=config`);
+  }
+
+  if (!isSupabaseCloudProjectUrl(supabaseUrl)) {
+    const detail = encodeURIComponent(
+      "NEXT_PUBLIC_SUPABASE_URL must be your Supabase project URL (…supabase.co from Dashboard → Settings → API), not your Vercel deployment URL."
+    );
+    return NextResponse.redirect(`${origin}/login?error=config&detail=${detail}`);
   }
 
   const pkceCookies: {
