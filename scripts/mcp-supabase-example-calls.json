@@ -1,17 +1,17 @@
 {
-  "_comment": "דוגמאות MCP (user-supabase). production = strategy-vault-production; personal_dev = פרויקט אישי.",
+  "_comment": "Example MCP calls for server user-supabase. Replace project_id if needed.",
   "environments": {
     "production": {
       "supabase_name": "strategy-vault-production",
       "project_id": "krjzcvjcknaqttnrasbh",
       "project_ref": "krjzcvjcknaqttnrasbh",
-      "note": "הרץ מיגרציות ו-SQL רגיש רק אחרי אישור — זה ה-DB החי."
+      "note": "Live database — run migrations/SQL only after review."
     },
     "personal_dev": {
-      "supabase_name": "matan7491@gmail.com's Project",
+      "supabase_name": "personal dev project",
       "project_id": "rdbehorsnhufcjbzquwn",
       "project_ref": "rdbehorsnhufcjbzquwn",
-      "note": "מתאים לניסויים; אותן דוגמאות עם project_id אחר."
+      "note": "For experiments; same examples with a different project_id."
     }
   },
   "shared_queries": {
@@ -20,7 +20,7 @@
   },
   "production": {
     "example_1_execute_sql": {
-      "title_he": "פרוד — דוח SQL (קריאה בלבד)",
+      "title": "Production — read-only SQL report",
       "mcp_server": "user-supabase",
       "tool": "execute_sql",
       "arguments": {
@@ -29,7 +29,7 @@
       }
     },
     "example_2_apply_migration": {
-      "title_he": "פרוד — מיגרציה (DDL), רק אם באמת צריך",
+      "title": "Production — DDL migration (only if needed)",
       "mcp_server": "user-supabase",
       "tool": "apply_migration",
       "arguments": {
@@ -41,7 +41,7 @@
   },
   "personal_dev": {
     "example_1_execute_sql": {
-      "title_he": "דב — דוח SQL (קריאה בלבד)",
+      "title": "Dev — read-only SQL report",
       "mcp_server": "user-supabase",
       "tool": "execute_sql",
       "arguments": {
@@ -50,7 +50,7 @@
       }
     },
     "example_2_apply_migration": {
-      "title_he": "דב — מיגרציה (DDL)",
+      "title": "Dev — DDL migration",
       "mcp_server": "user-supabase",
       "tool": "apply_migration",
       "arguments": {
@@ -61,8 +61,8 @@
     }
   },
   "how_to_use_in_cursor": [
-    "פרוד: השתמש ב-production.example_1_execute_sql / example_2_apply_migration (project_id = krjzcvjcknaqttnrasbh).",
-    "דב אישי: personal_dev.* עם project_id = rdbehorsnhufcjbzquwn.",
-    "מיגרציה בפרוד — רק אחרי בדיקה בדב ואישור מפורש."
+    "Production: use production.example_1_execute_sql / example_2_apply_migration (project_id = krjzcvjcknaqttnrasbh).",
+    "Personal dev: personal_dev.* with project_id = rdbehorsnhufcjbzquwn.",
+    "Apply production migrations only after testing in dev and explicit approval."
   ]
 }

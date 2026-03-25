@@ -23,11 +23,13 @@ export function LoginForm() {
   async function signInWithGoogle() {
     setLoading(true);
     const supabase = createClient();
-    const origin = window.location.origin;
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+      window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${base}/auth/callback`,
       },
     });
     if (error) {

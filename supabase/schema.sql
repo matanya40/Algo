@@ -1,17 +1,17 @@
 -- =============================================================================
--- Strategy Vault — מסד נתונים מלא (קובץ יחיד)
+-- Strategy Vault — full database schema (single file)
 -- =============================================================================
--- Supabase → SQL Editor → הדבק את הקובץ המלא → Run.
+-- Supabase → SQL Editor → paste this entire file → Run.
 --
--- כולל: טבלאות (profiles, strategies, strategy_metrics, strategy_files,
---       strategy_pages, strategy_page_assets),
---       טריגרים, פונקציות בעלות (RLS + Storage), מדיניות RLS,
---       באקט Storage "strategy-assets" + מדיניות על storage.objects.
+-- Includes: tables (profiles, strategies, strategy_metrics, strategy_files,
+--           strategy_pages, strategy_page_assets),
+--           triggers, ownership helpers (RLS + Storage), RLS policies,
+--           Storage bucket "strategy-assets" + policies on storage.objects.
 --
--- אפשר להריץ שוב בבטחה (IF NOT EXISTS / OR REPLACE / DROP POLICY IF EXISTS).
+-- Safe to re-run (IF NOT EXISTS / OR REPLACE / DROP POLICY IF EXISTS).
 --
--- דמו נתונים: בסוף הקובץ יש בלוק בתוך הערה /* ... */ — אחרי התחברות ראשונה
---           בפרויקט, העתק רק את הבלוק (בלי /* */) והרץ בשאילתה נפרדת.
+-- Optional seed: commented block at the bottom inside /* ... */ — after first
+-- Google sign-in, copy only that block (without /* */) and run as a separate query.
 -- =============================================================================
 
 -- ----------------------------------------------------------------------------- tables
@@ -294,8 +294,8 @@ create policy "storage_delete_own" on storage.objects
   );
 
 -- =============================================================================
--- OPTIONAL SEED (לא להריץ יחד עם סכימה חדשה לפני שיש משתמש)
--- הסר את שורות ההערה /* ו-*/ והרץ רק את הבלוק — אחרי התחברות Google פעם אחת.
+-- OPTIONAL SEED — do not run on a fresh schema before at least one user exists.
+-- Remove the /* */ comment wrappers and run only this block — after one Google sign-in.
 -- =============================================================================
 /*
 do $$

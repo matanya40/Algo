@@ -1,7 +1,6 @@
-# Push Algo repo to GitHub (https://github.com/matanya40/Algo)
+# Push this repo to GitHub (remote: origin, branch: main)
 # Requires Git for Windows: https://git-scm.com/download/win
-# Run in PowerShell:  cd $env:USERPROFILE\Documents\GitHub\Algo
-#                      .\push-to-github.ps1
+# Usage: .\push-to-github.ps1 "commit message"
 
 $ErrorActionPreference = "Stop"
 $repo = $PSScriptRoot
@@ -26,13 +25,11 @@ if (-not $gitExe) {
 
 Set-Location $repo
 Write-Host "Using: $gitExe"
-& $gitExe status
 & $gitExe add -A
-& $gitExe status
 $msg = if ($args[0]) { $args[0] } else { "Update project" }
 & $gitExe commit -m $msg 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Commit may have failed (nothing to commit?). Continuing to push if possible."
+    Write-Host "Commit skipped or failed (nothing new?). Exit: $LASTEXITCODE"
 }
 & $gitExe push -u origin main
 Write-Host "Done."
