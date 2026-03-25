@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Strategy Vault",
   description: "Internal trading strategy documentation",
   robots: { index: false, follow: false },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml", sizes: "any" }],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
