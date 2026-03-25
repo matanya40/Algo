@@ -58,9 +58,10 @@ export function LoginForm() {
   async function signInWithGoogle() {
     setLoading(true);
     const supabase = createClient();
-    const base =
-      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-      window.location.origin;
+    // OAuth must return to the same origin the user is on. NEXT_PUBLIC_SITE_URL is
+    // baked in at build time; if it points at localhost in Vercel, prod sign-in would
+    // still redirect to localhost. Prefer the live browser origin for redirectTo.
+    const base = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
