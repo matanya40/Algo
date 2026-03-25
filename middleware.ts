@@ -76,8 +76,15 @@ export async function middleware(request: NextRequest) {
   const isLogin = pathname.startsWith("/login");
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isAuthGoogle = pathname.startsWith("/auth/google");
+  // Supabase may send users to Site URL root with ?code= (not /auth/callback). Let `/`
+  // render so app/page.tsx can forward to /auth/callback; otherwise we'd redirect to
+  // /login first and break the OAuth exchange.
+  const isRootOAuthReturn =
+    pathname === "/" &&
+    (request.nextUrl.searchParams.has("code") ||
+      request.nextUrl.searchParams.has("error"));
 
-  if (!user && !isLogin && !isAuthCallback && !isAuthGoogle) {
+  if (!user && !isLogin && !isAuthCallback && !isAuthGoogle && !isRootOAuthReturn) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
