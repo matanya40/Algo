@@ -1,0 +1,68 @@
+{
+  "_comment": "דוגמאות MCP (user-supabase). production = strategy-vault-production; personal_dev = פרויקט אישי.",
+  "environments": {
+    "production": {
+      "supabase_name": "strategy-vault-production",
+      "project_id": "krjzcvjcknaqttnrasbh",
+      "project_ref": "krjzcvjcknaqttnrasbh",
+      "note": "הרץ מיגרציות ו-SQL רגיש רק אחרי אישור — זה ה-DB החי."
+    },
+    "personal_dev": {
+      "supabase_name": "matan7491@gmail.com's Project",
+      "project_id": "rdbehorsnhufcjbzquwn",
+      "project_ref": "rdbehorsnhufcjbzquwn",
+      "note": "מתאים לניסויים; אותן דוגמאות עם project_id אחר."
+    }
+  },
+  "shared_queries": {
+    "report_strategies_metrics_files": "select\n  s.id,\n  s.name,\n  s.status,\n  s.market,\n  s.instrument,\n  s.timeframe,\n  s.direction,\n  s.created_at,\n  m.win_rate,\n  m.total_trades,\n  m.net_profit,\n  m.max_drawdown,\n  m.profit_factor,\n  (select count(*)::int from public.strategy_files f where f.strategy_id = s.id) as file_count\nfrom public.strategies s\nleft join public.strategy_metrics m on m.strategy_id = s.id\norder by s.updated_at desc\nlimit 50;",
+    "migration_strategy_files_index": "create index if not exists strategy_files_strategy_created_idx\n  on public.strategy_files (strategy_id, created_at desc);"
+  },
+  "production": {
+    "example_1_execute_sql": {
+      "title_he": "פרוד — דוח SQL (קריאה בלבד)",
+      "mcp_server": "user-supabase",
+      "tool": "execute_sql",
+      "arguments": {
+        "project_id": "krjzcvjcknaqttnrasbh",
+        "query": "select\n  s.id,\n  s.name,\n  s.status,\n  s.market,\n  s.instrument,\n  s.timeframe,\n  s.direction,\n  s.created_at,\n  m.win_rate,\n  m.total_trades,\n  m.net_profit,\n  m.max_drawdown,\n  m.profit_factor,\n  (select count(*)::int from public.strategy_files f where f.strategy_id = s.id) as file_count\nfrom public.strategies s\nleft join public.strategy_metrics m on m.strategy_id = s.id\norder by s.updated_at desc\nlimit 50;"
+      }
+    },
+    "example_2_apply_migration": {
+      "title_he": "פרוד — מיגרציה (DDL), רק אם באמת צריך",
+      "mcp_server": "user-supabase",
+      "tool": "apply_migration",
+      "arguments": {
+        "project_id": "krjzcvjcknaqttnrasbh",
+        "name": "add_strategy_files_list_order_index",
+        "query": "create index if not exists strategy_files_strategy_created_idx\n  on public.strategy_files (strategy_id, created_at desc);"
+      }
+    }
+  },
+  "personal_dev": {
+    "example_1_execute_sql": {
+      "title_he": "דב — דוח SQL (קריאה בלבד)",
+      "mcp_server": "user-supabase",
+      "tool": "execute_sql",
+      "arguments": {
+        "project_id": "rdbehorsnhufcjbzquwn",
+        "query": "select\n  s.id,\n  s.name,\n  s.status,\n  s.market,\n  s.instrument,\n  s.timeframe,\n  s.direction,\n  s.created_at,\n  m.win_rate,\n  m.total_trades,\n  m.net_profit,\n  m.max_drawdown,\n  m.profit_factor,\n  (select count(*)::int from public.strategy_files f where f.strategy_id = s.id) as file_count\nfrom public.strategies s\nleft join public.strategy_metrics m on m.strategy_id = s.id\norder by s.updated_at desc\nlimit 50;"
+      }
+    },
+    "example_2_apply_migration": {
+      "title_he": "דב — מיגרציה (DDL)",
+      "mcp_server": "user-supabase",
+      "tool": "apply_migration",
+      "arguments": {
+        "project_id": "rdbehorsnhufcjbzquwn",
+        "name": "add_strategy_files_list_order_index",
+        "query": "create index if not exists strategy_files_strategy_created_idx\n  on public.strategy_files (strategy_id, created_at desc);"
+      }
+    }
+  },
+  "how_to_use_in_cursor": [
+    "פרוד: השתמש ב-production.example_1_execute_sql / example_2_apply_migration (project_id = krjzcvjcknaqttnrasbh).",
+    "דב אישי: personal_dev.* עם project_id = rdbehorsnhufcjbzquwn.",
+    "מיגרציה בפרוד — רק אחרי בדיקה בדב ואישור מפורש."
+  ]
+}
