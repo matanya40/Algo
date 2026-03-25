@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 
 export default function LoginPage() {
@@ -13,9 +12,7 @@ export default function LoginPage() {
             Internal strategy documentation
           </p>
         </div>
-        <Suspense fallback={null}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm />
       </div>
     </div>
   );
