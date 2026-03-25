@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { authDebug } from "@/lib/auth/debug-log";
 import { isSupabaseCloudProjectUrl } from "@/lib/supabase/config";
 
 function first(v: string | string[] | undefined): string | undefined {
@@ -57,6 +58,19 @@ export default async function LoginPage({
     const host = h.get("x-forwarded-host") ?? h.get("host");
     const proto = h.get("x-forwarded-proto") ?? "https";
     const appOrigin = host ? `${proto}://${host}` : null;
+
+    let supabaseAuthorizeHost = "";
+    try {
+      supabaseAuthorizeHost = new URL(base).hostname;
+    } catch {
+      supabaseAuthorizeHost = "(invalid)";
+    }
+    authDebug("login.pkce_resume", {
+      provider,
+      appOrigin,
+      supabaseAuthorizeHost,
+      redirect_to_raw: first(sp.redirect_to) ?? null,
+    });
 
     const qs = new URLSearchParams();
     for (const [key, raw] of Object.entries(sp)) {

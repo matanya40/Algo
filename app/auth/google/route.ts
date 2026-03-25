@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { authDebug, authDebugRequestOrigin } from "@/lib/auth/debug-log";
 import { getRequestOrigin } from "@/lib/auth/request-origin";
 import { isSupabaseCloudProjectUrl } from "@/lib/supabase/config";
 
@@ -13,6 +14,20 @@ export async function GET(request: NextRequest) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const origin = getRequestOrigin(request);
   const redirectTo = `${origin}/auth/callback`;
+  authDebugRequestOrigin(request, origin);
+  let supabaseHost = "";
+  try {
+    supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : "";
+  } catch {
+    supabaseHost = "(invalid NEXT_PUBLIC_SUPABASE_URL)";
+  }
+  authDebug("google.start", {
+    redirectTo,
+    supabaseProjectHost: supabaseHost,
+    supabaseUrlLooksLikeCloud: supabaseUrl
+      ? isSupabaseCloudProjectUrl(supabaseUrl)
+      : false,
+  });
 
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(`${origin}/login?error=config`);
@@ -52,8 +67,21 @@ export async function GET(request: NextRequest) {
   });
 
   if (error || !data.url) {
+    authDebug("google.signInWithOAuth_failed", {
+      message: error?.message ?? "no url",
+    });
     const detail = encodeURIComponent(error?.message ?? "OAuth sign-in failed");
     return NextResponse.redirect(`${origin}/login?error=oauth&detail=${detail}`);
+  }
+
+  try {
+    const u = new URL(data.url);
+    authDebug("google.redirect_to_provider", {
+      nextHopHost: u.hostname,
+      nextHopPath: u.pathname,
+    });
+  } catch {
+    authDebug("google.redirect_to_provider", { nextHop: "(unparseable url)" });
   }
 
   const res = NextResponse.redirect(data.url);

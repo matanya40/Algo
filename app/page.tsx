@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { authDebug } from "@/lib/auth/debug-log";
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -21,6 +22,11 @@ export default async function HomePage({
   const code = first(sp.code);
   const err = first(sp.error);
   if (code || err) {
+    authDebug("home.oauth_query_forward", {
+      hasCode: Boolean(code),
+      codeLength: code?.length ?? 0,
+      hasOAuthError: Boolean(err),
+    });
     const q = new URLSearchParams();
     if (code) q.set("code", code);
     if (err) q.set("error", err);
