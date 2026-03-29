@@ -4,31 +4,19 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { clarifySupabaseTableError } from "@/lib/supabase/db-errors";
 import {
-  resolveStrategyUploadMime,
+  resolveStrategyUploadMimeAsync,
   sanitizeStrategyFileName,
   STRATEGY_UPLOAD_MAX_BYTES,
 } from "@/lib/strategy-upload-mime";
+import {
+  assertStrategyOwner,
+  uploadStrategyFileFromFormData,
+} from "@/lib/strategy-file-upload";
+import type { StrategyFileRow } from "@/lib/types";
 import { randomUUID } from "crypto";
 
 const BUCKET = "strategy-assets";
 const MAX_BYTES = STRATEGY_UPLOAD_MAX_BYTES;
-
-async function assertStrategyOwner(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  strategyId: string
-) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-  const { data: row } = await supabase
-    .from("strategies")
-    .select("id")
-    .eq("id", strategyId)
-    .eq("owner_id", user.id)
-    .maybeSingle();
-  if (!row) throw new Error("Not found");
-}
 
 /**
  * Upload files from FormData (`files` keys) using an existing authed client.
@@ -51,9 +39,11 @@ export async function persistStrategyFilesFromFormData(
       if (entry.size > MAX_BYTES) {
         throw new Error("File too large (max 50MB)");
       }
-      const mime = resolveStrategyUploadMime(entry, displayName);
+      const mime = await resolveStrategyUploadMimeAsync(entry, displayName);
       if (!mime) {
-        throw new Error(`${displayName}: type not allowed`);
+        throw new Error(
+          `${displayName}: type not allowed (add extension e.g. .png or use PDF/ZIP/office formats).`
+        );
       }
       const safeName = sanitizeStrategyFileName(displayName);
       const objectPath = `${strategyId}/${randomUUID()}-${safeName}`;
@@ -98,58 +88,16 @@ export async function persistStrategyFilesFromFormData(
   return { uploaded, errors };
 }
 
-export async function uploadStrategyFile(strategyId: string, formData: FormData) {
+export async function uploadStrategyFile(
+  strategyId: string,
+  formData: FormData
+): Promise<StrategyFileRow> {
   const supabase = await createClient();
-  await assertStrategyOwner(supabase, strategyId);
-
-  const raw = formData.get("file");
-  if (!(raw instanceof Blob) || raw.size === 0) {
-    throw new Error("No file");
-  }
-  if (raw.size > MAX_BYTES) {
-    throw new Error("File too large (max 50MB)");
-  }
-  const displayName =
-    raw instanceof File && raw.name ? raw.name : "upload";
-  const mime = resolveStrategyUploadMime(raw, displayName);
-  if (!mime) {
-    throw new Error(
-      "File type not allowed (archives, Office, PDF, images, text/code, JSON, etc.)."
-    );
-  }
-
-  const safeName = sanitizeStrategyFileName(displayName);
-  const objectPath = `${strategyId}/${randomUUID()}-${safeName}`;
-
-  const buffer = Buffer.from(await raw.arrayBuffer());
-  const { error: upErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(objectPath, buffer, { contentType: mime, upsert: false });
-
-  if (upErr) {
-    throw new Error(`Storage: ${clarifySupabaseTableError(upErr.message)}`);
-  }
-
-  const ext = safeName.includes(".") ? safeName.split(".").pop() ?? null : null;
-
-  const { error: dbErr } = await supabase.from("strategy_files").insert({
-    strategy_id: strategyId,
-    file_name: displayName,
-    file_path: objectPath,
-    file_type: ext,
-    mime_type: mime,
-    size_bytes: raw.size,
-  });
-
-  if (dbErr) {
-    await supabase.storage.from(BUCKET).remove([objectPath]);
-    throw new Error(
-      `Database (file row): ${clarifySupabaseTableError(dbErr.message)}`
-    );
-  }
-
+  const row = await uploadStrategyFileFromFormData(supabase, strategyId, formData);
   revalidatePath(`/strategies/${strategyId}`);
+  revalidatePath(`/strategies/${strategyId}/edit`);
   revalidatePath("/dashboard");
+  return row;
 }
 
 /** Upload many files in one server action (same session). */
@@ -180,5 +128,6 @@ export async function deleteStrategyFile(strategyId: string, fileId: string) {
   if (error) throw new Error(clarifySupabaseTableError(error.message));
 
   revalidatePath(`/strategies/${strategyId}`);
+  revalidatePath(`/strategies/${strategyId}/edit`);
   revalidatePath("/dashboard");
 }

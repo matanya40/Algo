@@ -1,16 +1,15 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { StrategyDocumentationTabsEditor } from "@/components/strategy/strategy-documentation-tabs-editor";
 import { StrategyForm } from "@/components/strategy/strategy-form";
-import { StrategyPageEditor } from "@/components/strategy/strategy-page-editor";
+import { StrategySharingPanel } from "@/components/strategy/strategy-sharing-panel";
 import { UploadFilesSection } from "@/components/strategy/upload-files-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getEmailsByUserIds } from "@/lib/admin/get-user-emails-by-ids";
+import { normalizeDocumentationTabs } from "@/lib/strategy-doc-tabs";
 import { createClient } from "@/lib/supabase/server";
 import { getMetrics } from "@/lib/strategy-helpers";
-import type {
-  StrategyFileRow,
-  StrategyPageAssetRow,
-  StrategyPageWithAssets,
-  StrategyWithMetrics,
-} from "@/lib/types";
+import type { StrategyFileRow, StrategyWithMetrics } from "@/lib/types";
 
 export default async function EditStrategyPage({
   params,
@@ -44,25 +43,65 @@ export default async function EditStrategyPage({
 
   const fileRows = (files ?? []) as StrategyFileRow[];
 
-  const { data: docPageRaw } = await supabase
-    .from("strategy_pages")
-    .select("*, strategy_page_assets(*)")
-    .eq("strategy_id", id)
-    .maybeSingle();
+  const docTabs = normalizeDocumentationTabs(
+    (row as { documentation_tabs?: unknown }).documentation_tabs
+  );
 
-  const docPage = docPageRaw as StrategyPageWithAssets | null;
-  const initialPageForEditor = docPage
-    ? {
-        id: docPage.id,
-        strategy_id: docPage.strategy_id,
-        title: docPage.title,
-        content_json: docPage.content_json,
-        created_at: docPage.created_at,
-        updated_at: docPage.updated_at,
-      }
-    : null;
-  const pageAssets = (docPage?.strategy_page_assets ??
-    []) as StrategyPageAssetRow[];
+  const { data: shareRows } = await supabase
+    .from("strategy_shares")
+    .select("id, user_id, created_at")
+    .eq("strategy_id", id)
+    .order("created_at", { ascending: true });
+
+  const shareUserIds = (shareRows ?? []).map((s) => s.user_id);
+  let shareProfiles: { id: string; full_name: string | null }[] = [];
+  if (shareUserIds.length > 0) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", shareUserIds);
+    shareProfiles = profs ?? [];
+  }
+
+  const profileById = new Map(
+    shareProfiles.map((p) => [p.id, p.full_name] as const)
+  );
+
+  const emailByUserId = await getEmailsByUserIds(shareUserIds);
+
+  const initialShares = (shareRows ?? []).map((s) => {
+    const email = emailByUserId.get(s.user_id)?.trim() || null;
+    const fullName = profileById.get(s.user_id)?.trim() || null;
+    const displayName =
+      email ||
+      fullName ||
+      `User ${s.user_id.slice(0, 8)}…`;
+    const subtitle = email && fullName ? fullName : null;
+    return {
+      id: s.id,
+      user_id: s.user_id,
+      displayName,
+      subtitle,
+    };
+  });
+
+  const { data: inviteRows } = await supabase
+    .from("strategy_invites")
+    .select("id, invitee_email, token")
+    .eq("strategy_id", id)
+    .is("accepted_at", null)
+    .order("created_at", { ascending: true });
+
+  const initialInvites = (inviteRows ?? []).map((inv) => ({
+    id: inv.id,
+    invitee_email: inv.invitee_email,
+    token: inv.token,
+  }));
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const inviteBaseUrl = host ? `${proto}://${host}` : "";
 
   return (
     <div className="space-y-6">
@@ -73,12 +112,17 @@ export default async function EditStrategyPage({
         <p className="text-sm text-muted-foreground">{row.name}</p>
       </div>
 
-      <Tabs defaultValue="details" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="details">Details &amp; metrics</TabsTrigger>
-          <TabsTrigger value="docs">Strategy page</TabsTrigger>
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="flex h-auto flex-wrap gap-1">
+          <TabsTrigger value="details" className="font-mono text-xs sm:text-sm">
+            Details &amp; metrics
+          </TabsTrigger>
+          <TabsTrigger value="docs" className="font-mono text-xs sm:text-sm">
+            Backtest documentation
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="details" className="space-y-6">
+
+        <TabsContent value="details" className="mt-6 space-y-6">
           <StrategyForm
             mode="edit"
             strategyId={id}
@@ -87,18 +131,18 @@ export default async function EditStrategyPage({
           />
           <UploadFilesSection strategyId={id} files={fileRows} />
         </TabsContent>
-        <TabsContent value="docs" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Optional rich documentation — kept separate from structured fields and
-            list filters.
-          </p>
-          <StrategyPageEditor
-            strategyId={id}
-            initialPage={initialPageForEditor}
-            initialAssets={pageAssets}
-          />
+
+        <TabsContent value="docs" className="mt-6">
+          <StrategyDocumentationTabsEditor strategyId={id} initialTabs={docTabs} />
         </TabsContent>
       </Tabs>
+
+      <StrategySharingPanel
+        strategyId={id}
+        inviteBaseUrl={inviteBaseUrl}
+        initialShares={initialShares}
+        initialInvites={initialInvites}
+      />
     </div>
   );
 }

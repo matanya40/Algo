@@ -20,7 +20,6 @@ export async function GET(
     .from("strategies")
     .select("id")
     .eq("id", strategyId)
-    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (!strat) {

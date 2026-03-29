@@ -7,7 +7,7 @@ export const STRATEGY_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
 
 /** Broad file picker hint — server still enforces this allowlist. */
 export const STRATEGY_FILE_INPUT_ACCEPT =
-  "image/*,.pdf,.csv,.zip,.rar,.7z,.tar,.gz,.tgz,.json,.txt,.md,.xml,.log,.yml,.yaml,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.ods,.odt,.html,.htm";
+  "image/*,.pdf,.csv,.zip,.rar,.7z,.tar,.gz,.tgz,.json,.txt,.md,.xml,.log,.yml,.yaml,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.ods,.odt,.html,.htm,*/*";
 
 const CANONICAL = new Set([
   // images
@@ -135,6 +135,70 @@ export function resolveStrategyUploadMime(
     if (CANONICAL.has(n)) return n;
   }
   return inferMimeFromFileName(fileName);
+}
+
+/** First bytes when browser omits type / file has no extension (common for screenshots on Windows). */
+async function sniffMimeFromBlob(blob: Blob): Promise<string | null> {
+  const buf = await blob.slice(0, 16).arrayBuffer();
+  const u = new Uint8Array(buf);
+  if (u.length < 4) return null;
+  if (u[0] === 0x89 && u[1] === 0x50 && u[2] === 0x4e && u[3] === 0x47) {
+    return "image/png";
+  }
+  if (u[0] === 0xff && u[1] === 0xd8 && u[2] === 0xff) return "image/jpeg";
+  if (
+    u[0] === 0x47 &&
+    u[1] === 0x49 &&
+    u[2] === 0x46 &&
+    (u[3] === 0x38 || u[3] === 0x39)
+  ) {
+    return "image/gif";
+  }
+  if (u.length >= 12) {
+    if (u[0] === 0x52 && u[1] === 0x49 && u[2] === 0x46 && u[3] === 0x46) {
+      if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) {
+        return "image/webp";
+      }
+    }
+  }
+  if (u[0] === 0x25 && u[1] === 0x50 && u[2] === 0x44 && u[3] === 0x46) {
+    return "application/pdf";
+  }
+  if (u[0] === 0x50 && u[1] === 0x4b) {
+    return "application/zip";
+  }
+  return null;
+}
+
+/**
+ * Same as {@link resolveStrategyUploadMime} but falls back to magic-byte sniffing
+ * when the file name has no extension and the browser reports octet-stream / empty type.
+ */
+/** README, LICENSE, Makefile, etc. — no extension, browser often sends octet-stream. */
+const EXTENSIONLESS_TEXT_MAX = 5 * 1024 * 1024;
+
+function looksLikeExtensionlessName(fileName: string): boolean {
+  const base = fileName.split(/[/\\]/).pop() ?? fileName;
+  if (!base || base === "." || base === "..") return false;
+  return !/\.[a-z0-9]{1,12}$/i.test(base);
+}
+
+export async function resolveStrategyUploadMimeAsync(
+  blob: Blob,
+  fileName: string
+): Promise<string | null> {
+  const direct = resolveStrategyUploadMime(blob, fileName);
+  if (direct) return direct;
+  const sniffed = await sniffMimeFromBlob(blob);
+  if (sniffed && CANONICAL.has(sniffed)) return sniffed;
+  if (
+    blob.size > 0 &&
+    blob.size <= EXTENSIONLESS_TEXT_MAX &&
+    looksLikeExtensionlessName(fileName)
+  ) {
+    return "text/plain";
+  }
+  return null;
 }
 
 export function sanitizeStrategyFileName(name: string) {

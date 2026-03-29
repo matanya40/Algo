@@ -90,13 +90,36 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-surface p-4">
-      <div className="w-full max-w-sm space-y-6 rounded-lg border border-border bg-card p-8 shadow-sm">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[hsl(222_47%_5%)] p-4">
+      {/* Ambient gradients */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,hsl(212_90%_55%/0.22),transparent_55%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_100%_80%,hsl(152_60%_40%/0.12),transparent_50%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_0%_100%,hsl(217_90%_60%/0.08),transparent_45%)]"
+        aria-hidden
+      />
+      {/* Subtle grid */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,hsl(217_33%_18%/0.35)_1px,transparent_1px),linear-gradient(to_bottom,hsl(217_33%_18%/0.35)_1px,transparent_1px)] bg-[size:48px_48px] opacity-[0.35]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,hsl(222_47%_5%),transparent_35%,hsl(222_47%_5%))]"
+        aria-hidden
+      />
+
+      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-2xl border border-white/10 bg-[hsl(222_40%_9%/0.85)] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <div className="space-y-1 text-center">
-          <h1 className="font-mono text-xl font-semibold tracking-tight">
+          <h1 className="font-mono text-xl font-semibold tracking-tight text-white">
             Strategy Vault
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/55">
             Internal strategy documentation
           </p>
         </div>

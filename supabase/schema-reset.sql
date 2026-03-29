@@ -24,9 +24,28 @@ where id = 'strategy-assets';
 -- Stop new-user → profiles hook before dropping tables
 drop trigger if exists on_auth_user_created on auth.users;
 
+drop function if exists public.handle_new_user() cascade;
+
 drop trigger if exists strategies_set_updated_at on public.strategies;
 drop trigger if exists strategy_metrics_set_updated_at on public.strategy_metrics;
 drop trigger if exists strategy_pages_set_updated_at on public.strategy_pages;
+
+drop function if exists public.duplicate_strategy(uuid) cascade;
+drop function if exists public.clone_strategy_from_template_extra(text) cascade;
+drop function if exists public.clone_strategy_from_template(text) cascade;
+drop function if exists public.provision_auto_templates_for_user(uuid) cascade;
+drop function if exists public.accept_strategy_invite(text) cascade;
+
+drop table if exists public.strategy_templates cascade;
+
+drop table if exists public.strategy_invites cascade;
+drop table if exists public.strategy_shares cascade;
+
+drop table if exists public.account_derived_stats cascade;
+drop table if exists public.account_position_snapshots cascade;
+drop table if exists public.account_fills cascade;
+drop table if exists public.trading_accounts cascade;
+drop table if exists public.broker_connections cascade;
 
 drop table if exists public.strategy_page_assets cascade;
 drop table if exists public.strategy_pages cascade;
@@ -36,6 +55,7 @@ drop table if exists public.strategies cascade;
 drop table if exists public.profiles cascade;
 
 drop function if exists public.set_updated_at() cascade;
-drop function if exists public.handle_new_user() cascade;
+drop function if exists public.current_user_can_view_strategy(uuid) cascade;
+drop function if exists public.current_user_can_access_strategy_storage_path(text) cascade;
 drop function if exists public.current_user_owns_strategy(uuid) cascade;
 drop function if exists public.current_user_owns_strategy_storage_path(text) cascade;

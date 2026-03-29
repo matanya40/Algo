@@ -45,9 +45,25 @@ export async function deleteStrategyStorageAndRow(strategyId: string) {
     pageAssetPaths = (pageAssets ?? []).map((a) => a.storage_path);
   }
 
+  const { data: blogPosts } = await supabase
+    .from("strategy_blog_posts")
+    .select("id")
+    .eq("strategy_id", strategyId);
+
+  const blogPostIds = (blogPosts ?? []).map((p) => p.id);
+  let blogAssetPaths: string[] = [];
+  if (blogPostIds.length > 0) {
+    const { data: blogAssets } = await supabase
+      .from("strategy_blog_assets")
+      .select("storage_path")
+      .in("blog_post_id", blogPostIds);
+    blogAssetPaths = (blogAssets ?? []).map((a) => a.storage_path);
+  }
+
   const paths = [
     ...(files ?? []).map((f) => f.file_path),
     ...pageAssetPaths,
+    ...blogAssetPaths,
   ];
   if (paths.length) {
     await supabase.storage.from(BUCKET).remove(paths);

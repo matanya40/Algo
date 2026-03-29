@@ -191,3 +191,26 @@ export async function deleteStrategyClient(strategyId: string) {
   await deleteStrategyStorageAndRow(strategyId);
   revalidatePath("/dashboard");
 }
+
+/** Duplicate an owned strategy (metrics copied; docs/files are not duplicated). */
+export async function duplicateStrategy(strategyId: string): Promise<{ ok: true; id: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase.rpc("duplicate_strategy", {
+    p_source_id: strategyId,
+  });
+
+  if (error) {
+    throw new Error(clarifySupabaseTableError(error.message));
+  }
+  const id = data as string | null;
+  if (!id) throw new Error("Duplicate failed");
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/strategies/${id}`);
+  return { ok: true, id };
+}

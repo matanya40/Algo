@@ -36,11 +36,15 @@
     "lucide-react": "^0.468.0",
     "next": "^15.1.0",
     "next-themes": "^0.4.4",
+    "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^15.0.0",
+    "recharts": "^3.8.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

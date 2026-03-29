@@ -65,36 +65,3 @@
     @apply bg-background text-foreground antialiased;
   }
 }
-
-/* Tiptap / ProseMirror (strategy documentation) */
-@layer components {
-  .strategy-page-editor .ProseMirror {
-    min-height: 240px;
-    padding: 0.75rem 1rem;
-    outline: none;
-  }
-  .strategy-page-editor .ProseMirror p {
-    margin: 0.35em 0;
-  }
-  .strategy-page-editor .ProseMirror ul,
-  .strategy-page-editor .ProseMirror ol {
-    margin: 0.35em 0;
-    padding-left: 1.25rem;
-  }
-  .strategy-page-editor .ProseMirror h2 {
-    margin-top: 0.75rem;
-    margin-bottom: 0.35rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-  }
-  .strategy-page-editor .ProseMirror h3 {
-    margin-top: 0.5rem;
-    margin-bottom: 0.25rem;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  .strategy-page-editor.readonly .ProseMirror {
-    min-height: 0;
-    padding: 0;
-  }
-}

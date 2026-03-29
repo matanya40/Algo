@@ -19,7 +19,6 @@ export async function GET(
     .from("strategies")
     .select("*, strategy_metrics(*)")
     .eq("id", id)
-    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (error) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Plus, Settings } from "lucide-react";
+import { LayoutDashboard, Plus, Settings, Unplug, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppTopBar } from "@/components/layout/app-top-bar";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/broker-connections", label: "Broker connections", icon: Unplug },
+  { href: "/dashboard/trading-accounts", label: "Trading accounts", icon: Wallet },
   { href: "/strategies/new", label: "New strategy", icon: Plus },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

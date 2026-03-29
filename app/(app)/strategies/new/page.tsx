@@ -1,9 +1,32 @@
+import { TemplateLibrarySection } from "@/components/strategy/template-library-section";
 import { StrategyForm } from "@/components/strategy/strategy-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createClient } from "@/lib/supabase/server";
+import { clarifySupabaseTableError } from "@/lib/supabase/db-errors";
+import type { StrategyTemplateRow } from "@/lib/types";
 
-export default function NewStrategyPage() {
+export default async function NewStrategyPage() {
+  let templates: StrategyTemplateRow[] = [];
+  let templateError: string | null = null;
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("strategy_templates")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      templateError = clarifySupabaseTableError(error.message);
+    } else {
+      templates = (data ?? []) as StrategyTemplateRow[];
+    }
+  } catch {
+    templateError = "Could not load templates.";
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="font-mono text-2xl font-semibold tracking-tight">
           New strategy
@@ -12,6 +35,14 @@ export default function NewStrategyPage() {
           Document logic, metrics, and optional files in one place.
         </p>
       </div>
+
+      {templateError ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          {templateError}
+        </div>
+      ) : (
+        <TemplateLibrarySection templates={templates} />
+      )}
 
       <Tabs defaultValue="details" className="space-y-4">
         <TabsList>

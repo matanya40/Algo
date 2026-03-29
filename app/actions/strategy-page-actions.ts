@@ -6,11 +6,11 @@ import type { JSONContent } from "@tiptap/core";
 import { createClient } from "@/lib/supabase/server";
 import { clarifySupabaseTableError } from "@/lib/supabase/db-errors";
 import {
-  resolveStrategyUploadMime,
+  resolveStrategyUploadMimeAsync,
   sanitizeStrategyFileName,
   STRATEGY_UPLOAD_MAX_BYTES,
 } from "@/lib/strategy-upload-mime";
-import type { StrategyPageRow } from "@/lib/types";
+import type { StrategyPageAssetRow, StrategyPageRow } from "@/lib/types";
 
 const BUCKET = "strategy-assets";
 const MAX_BYTES = STRATEGY_UPLOAD_MAX_BYTES;
@@ -95,7 +95,7 @@ export async function uploadStrategyPageAsset(
   strategyId: string,
   pageId: string,
   formData: FormData
-): Promise<{ assetId: string; url: string }> {
+): Promise<{ asset: StrategyPageAssetRow; url: string }> {
   const supabase = await createClient();
   await assertStrategyOwner(supabase, strategyId);
 
@@ -114,10 +114,10 @@ export async function uploadStrategyPageAsset(
 
   const displayName =
     raw instanceof File && raw.name ? raw.name : "upload";
-  const mime = resolveStrategyUploadMime(raw, displayName);
+  const mime = await resolveStrategyUploadMimeAsync(raw, displayName);
   if (!mime) {
     throw new Error(
-      "File type not allowed (archives, Office, PDF, images, text/code, JSON, etc.)."
+      "Could not detect file type. Try renaming with an extension (.png, .pdf) or use a supported format."
     );
   }
 
@@ -145,7 +145,7 @@ export async function uploadStrategyPageAsset(
       size_bytes: raw.size,
       storage_path: objectPath,
     })
-    .select("id")
+    .select("*")
     .single();
 
   if (dbErr) {
@@ -156,8 +156,9 @@ export async function uploadStrategyPageAsset(
   revalidatePath(`/strategies/${strategyId}`);
   revalidatePath(`/strategies/${strategyId}/edit`);
 
-  const url = `/api/strategy-page-asset/${strategyId}/${row.id}`;
-  return { assetId: row.id, url };
+  const asset = row as StrategyPageAssetRow;
+  const url = `/api/strategy-page-asset/${strategyId}/${asset.id}`;
+  return { asset, url };
 }
 
 export async function deleteStrategyPageAsset(
